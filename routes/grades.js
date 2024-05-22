@@ -21,7 +21,7 @@ router.get("/", async(req, res) => {
 }); 
 
 // Create a single grade entry
-router.post("/", async (req, res) => {
+router.post("/addGrade", async (req, res) => {
 
   try {
     const newDocument= await Grades.create(req.body)
@@ -56,7 +56,7 @@ router.get("/:id", async (req, res) => {
 }); 
 
 // add a score to a grade entry
-router.patch("/:id", async(req, res) => {
+router.patch("/addScore/:id", async(req, res) => {
   try {
     const gradeExists = await Grades.findById(req.params.id); 
     if (!gradeExists) {
@@ -74,7 +74,7 @@ router.patch("/:id", async(req, res) => {
 });
 
 //remove a score from the grade entry. ONLY WORKS ON ID 
-router.patch("/remove/:id", async(req, res) => {
+router.patch("/removeScore/:id", async(req, res) => {
   try {
     const gradeExists = await Grades.findById(req.params.id); 
 
@@ -94,7 +94,7 @@ router.patch("/remove/:id", async(req, res) => {
 }); 
 
 // this is a better method to remove 
-router.patch("/delete/:id", async(req, res) => {
+router.patch("/deleteScore/:id", async(req, res) => {
   try {
     const gradeExists = await Grades.findById(req.params.id); 
 
@@ -115,7 +115,7 @@ router.patch("/delete/:id", async(req, res) => {
 }); 
 
 // delete a single grade entry
-router.delete("/:id", async (req, res) => {
+router.delete("/deleteGrade/:id", async (req, res) => {
   try {
     const gradeExists = await Grades.findById(req.params.id); 
     if (!gradeExists) {
@@ -134,88 +134,116 @@ router.delete("/:id", async (req, res) => {
 }); 
 
 // Get a student's grade data
-router.get("/student/:id", async (req, res) => {
+router.get("/student/:student_id", async (req, res) => {
 
   try {
-    const studentExists = await Grades.findById(req.params.id); 
+    const studentExists = await Grades.find({student_id: req.params.student_id}); 
 
-    if (!studentExists) {
+    // find always returns an empty array if the item is not found
+
+    if (studentExists.length === 0) {
       return res.send("Student does not exist!"); 
     }
     else {
-      const studentData = await Grades.findById(req.params.id).toArray(); 
-      res.send(studentData); 
+      res.send(studentExists); 
     }
   } 
   catch (error) {
-    
+    console.log(error);
   }
 
 }); 
 
+// Delete a learner's grade data
+router.delete("/student/deleteGrade/:student_id", async(req, res) => {
+  try {
+    const studentExists = await Grades.find({student_id: req.params.student_id}); 
+
+     // find always returns an empty array if the item is not found
+    if (studentExists.length === 0) {
+      return res.send("Student does not exist!"); 
+    }
+
+    else {
+      const studentData = await Grades.deleteMany({student_id: req.params.student_id}); 
+      res.send(studentData); 
+    }
+  } 
+  
+  catch (error) {
+    console.log(error);
+  }
+}); 
+
+// Get a class's grade data
+
+router.get("/class/:class_id", async (req, res) => {
+  try {
+
+    const classExists = await Grades.find({class_id: req.params.class_id}); 
+    
+    
+    // find always returns an empty array if the item is not found
+
+    if (classExists.length === 0) {
+      return res.send("Invalid ID!"); 
+    }
+
+    else {
+      res.send(classExists); 
+    }
+    
+  } 
+  catch (error) {
+    console.log(error);
+  }
+}); 
+
+// Update a class id
+
+router.patch("/class/updateClassID/:class_id", async(req, res) => {
+
+  try {
+    const classExists = await Grades.find({class_id: req.params.class_id}); 
+
+    if (classExists.length === 0) {
+      return res.send("Invalid ID!"); 
+    }
+
+    else {
+      const update = {$set: {class_id: req.body.class_id}}
+      const updateClass = await Grades.updateMany({class_id: req.params.class_id}, update, {new: true}); 
+      res.send(updateClass); 
+    }
+  } 
+  
+  catch (error) {
+    console.log(error);
+  }
+}); 
+
+// Delete a class
+router.delete("/class/deleteClass/:class_id", async (req, res) => {
+
+  try {
+
+    const classExists = await Grades.find({class_id: req.params.class_id}); 
+
+    if (classExists.length === 0) {
+      return res.send("Invalid ID!")
+    }
+    else {
+      const deleteClass = await Grades.deleteMany({class_id: req.params.class_id}); 
+      res.send("Succesfully deleted!")
+    }
+    
+  } 
+  
+  catch (error) {
+    console.log(error);
+  }
+}); 
 
 
-// // Get a learner's grade data
-// router.get("/learner/:id", async (req, res) => {
-//   let collection = await db.collection("grades");
-//   let query = { learner_id: Number(req.params.id) };
-
-//   // Check for class_id parameter
-//   if (req.query.class) query.class_id = Number(req.query.class);
-
-//   let result = await collection.find(query).toArray();
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
-
-// // Delete a learner's grade data
-// router.delete("/learner/:id", async (req, res) => {
-//   let collection = await db.collection("grades");
-//   let query = { learner_id: Number(req.params.id) };
-
-//   let result = await collection.deleteOne(query);
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
-
-// // Get a class's grade data
-// router.get("/class/:id", async (req, res) => {
-//   let collection = await db.collection("grades");
-//   let query = { class_id: Number(req.params.id) };
-
-//   // Check for learner_id parameter
-//   if (req.query.learner) query.learner_id = Number(req.query.learner);
-
-//   let result = await collection.find(query).toArray();
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
-
-// // Update a class id
-// router.patch("/class/:id", async (req, res) => {
-//   let collection = await db.collection("grades");
-//   let query = { class_id: Number(req.params.id) };
-
-//   let result = await collection.updateMany(query, {
-//     $set: { class_id: req.body.class_id },
-//   });
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
-
-// // Delete a class
-// router.delete("/class/:id", async (req, res) => {
-//   let collection = await db.collection("grades");
-//   let query = { class_id: Number(req.params.id) };
-
-//   let result = await collection.deleteMany(query);
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
 
 export default router;
